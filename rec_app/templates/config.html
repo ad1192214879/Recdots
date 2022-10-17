@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="cn">
+<head>
+    <meta charset="UTF-8">
+    <title>算法配置</title>
+    <style type="text/css">
+        @import "../static/css/form.css";
+    </style>
+</head>
+<body>
+<div style="align-self: center">
+    <h2 class="title">配置你的推荐算法</h2>
+    <hr>
+</div>
+    <div>
+<form action="/rec/" method="post">
+    {% csrf_token %}
+
+        <table>
+            <tr>
+                <td>
+                    训练的最大轮数
+                </td>
+                <td>
+                    <input type="number" style="width: 200px; height: 20px;font-size: 15px" name="max_training_times" max="10000" min="10" step="5" value="10">
+                </td>
+            </tr>
+
+            <tr>
+                <td>
+                    训练的batch_size
+                </td>
+                <td>
+                    <input type="number" style="width: 200px; height: 20px;font-size: 15px" name="training_batch_size" max="4096" min="16" step="16" value="16">
+                </td>
+            </tr>
+
+            <tr>
+                <td>
+                    使用的内部优化器
+                </td>
+                <td>
+                    <input type="radio" style="width: 70px; height: 20px;font-size: 15px" name="group1" value="adam" id="group1_0" checked>adam<br>
+                    <input type="radio" style="width: 70px; height: 20px;font-size: 15px" name="group1" value="sgd" id="group1_1">sgd<br>
+                    <input type="radio" style="width: 70px; height: 20px;font-size: 15px" name="group1" value="adagrad" id="group1_2">adagrad<br>
+                    <input type="radio" style="width: 70px; height: 20px;font-size: 15px" name="group1" value="msprop" id="group1_3">msprop<br>
+                    <input type="radio" style="width: 70px; height: 20px;font-size: 15px" name="group1" value="sparse_adam" id="group1_4">sparse_adam<br>
+                </td>
+            </tr>
+
+            <tr>
+                <td>
+                    学习率
+                </td>
+                <td>
+                    <input type="number" style="width: 200px; height: 20px;font-size: 15px" name="learn_rate" max="1" min="0.001" step="0.001" value="0.001">
+                </td>
+            </tr>
+
+            <tr>
+                <td>
+                    负采样数目
+                </td>
+                <td>
+                    <input type="number" style="width: 200px; height: 20px;font-size: 15px" name="num_of_negative_sample" max="100" min="1" step="1" value="1">
+                </td>
+            </tr>
+
+            <tr>
+                <td>
+                    每次训练后评估的次数
+                </td>
+                <td>
+                    <input type="number" style="width: 200px; height: 20px;font-size: 15px" name="eval_times" max="100" min="1" step="1" value="1">
+                </td>
+            </tr>
+
+            <tr>
+                <td>
+                    控制训练收敛的步骤数
+                </td>
+                <td>
+                    <input type="number" style="width: 200px; height: 20px;font-size: 15px" name="steps" max="100" min="1" step="1" value="10">
+                </td>
+            </tr>
+
+            <tr>
+                <td>
+                    评估的方式
+                </td>
+                <td>
+                    <input type="radio" style="width: 70px; height: 20px;font-size: 15px" name="group2" value="RO_RS" id="group2_0" checked>RO_RS<br>
+                    <input type="radio" style="width: 70px; height: 20px;font-size: 15px" name="group2" value="RO_LS" id="group2_1">RO_LS<br>
+                    <input type="radio" style="width: 70px; height: 20px;font-size: 15px" name="group2" value="TO_RS" id="group2_2">TO_RS<br>
+                    <input type="radio" style="width: 70px; height: 20px;font-size: 15px" name="group2" value="TO_LS" id="group2_3">TO_LS<br>
+                </td>
+            </tr>
+
+            <tr>
+                <td>
+                    评估的方式
+                </td>
+                <td>
+                    <input type="radio" style="width: 70px; height: 20px;font-size: 15px" name="group3" value="full" id="group3_0" checked>full<br>
+                    <input type="radio" style="width: 70px; height: 20px;font-size: 15px" name="group3" value="pop100" id="group3_1">pop100<br>
+                    <input type="radio" style="width: 70px; height: 20px;font-size: 15px" name="group3" value="uni100" id="group3_2">uni100<br>
+                    <input type="radio" style="width: 70px; height: 20px;font-size: 15px" name="group3" value="labeled" id="group3_3">labeled<br>
+                </td>
+            </tr>
+
+            <tr>
+                <td>
+                    是否将同一用户的记录划分到一组
+                </td>
+                <td>
+                    <input type="radio" style="width: 70px; height: 20px;font-size: 15px" name="group4" value="yes" id="group4_0" checked>是<br>
+                    <input type="radio" style="width: 70px; height: 20px;font-size: 15px" name="group4" value="no" id="group4_1">否<br>
+                </td>
+            </tr>
+
+            <tr>
+                <td>
+                    训练集的分割比例
+                </td>
+                <td>
+                    训练集：<input type="number" style="width: 200px; height: 20px;font-size: 15px" name="train_set" max="1" min="0" step="0.1" value="0.8"><br>
+
+                    测试集：<input type="number" style="width: 200px; height: 20px;font-size: 15px" name="test_set" max="1" min="0" step="0.1" value="0.1"><br>
+
+                    验证集：<input type="number" style="width: 200px; height: 20px;font-size: 15px" name="validation_set" max="1" min="0" step="0.1" value="0.1"><br>
+                </td>
+            </tr>
+
+            <tr>
+                <td>
+                    评测标准
+                </td>
+                <td>
+                    <input type="checkbox" style="width: 70px; height: 30px;font-size: 15px" name="evaluation" value="Recall">Recall<br>
+                    <input type="checkbox" style="width: 70px; height: 30px;font-size: 15px" name="evaluation" value="MRR">MRR<br>
+                    <input type="checkbox" style="width: 70px; height: 30px;font-size: 15px" name="evaluation" value="NDCG">NDCG<br>
+                    <input type="checkbox" style="width: 70px; height: 30px;font-size: 15px" name="evaluation" value="Hit">Hit<br>
+                    <input type="checkbox" style="width: 70px; height: 30px;font-size: 15px" name="evaluation" value="MAP">MAP<br>
+                    <input type="checkbox" style="width: 70px; height: 30px;font-size: 15px" name="evaluation" value="Precision">Precision<br>
+                    <input type="checkbox" style="width: 70px; height: 30px;font-size: 15px" name="evaluation" value="GAUC">GAUC<br>
+                    <input type="checkbox" style="width: 70px; height: 30px;font-size: 15px" name="evaluation" value="ItemCoverage">ItemCoverage<br>
+                    <input type="checkbox" style="width: 70px; height: 30px;font-size: 15px" name="evaluation" value="AveragePopularity">AveragePopularity<br>
+                    <input type="checkbox" style="width: 70px; height: 30px;font-size: 15px" name="evaluation" value="GiniIndex">GiniIndex<br>
+                    <input type="checkbox" style="width: 70px; height: 30px;font-size: 15px" name="evaluation" value="ShannonEntropy">ShannonEntropy<br>
+                    <input type="checkbox" style="width: 70px; height: 30px;font-size: 15px" name="evaluation" value="TailPercentage">TailPercentage<br>
+                    <input type="checkbox" style="width: 70px; height: 30px;font-size: 15px" name="evaluation" value="AUC">AUC<br>
+                    <input type="checkbox" style="width: 70px; height: 30px;font-size: 15px" name="evaluation" value="MAE">MAE<br>
+                    <input type="checkbox" style="width: 70px; height: 30px;font-size: 15px" name="evaluation" value="RMSE">RMSE<br>
+                    <input type="checkbox" style="width: 70px; height: 30px;font-size: 15px" name="evaluation" value="LogLoss">LogLoss<br>
+                </td>
+            </tr>
+
+            <tr>
+                <td>
+                    提前停止训练的标准
+                </td>
+                <td>
+                    <select>
+                        <option style="width: 70px; height: 30px;font-size: 15px" name="stop_standard" value="Recall">Recall</option>
+                        <option style="width: 70px; height: 30px;font-size: 15px" name="stop_standard" value="MRR">MRR</option>
+                        <option style="width: 70px; height: 30px;font-size: 15px" name="stop_standard" value="NDCG">NDCG</option>
+                        <option style="width: 70px; height: 30px;font-size: 15px" name="stop_standard" value="Hit">Hit</option>
+                        <option style="width: 70px; height: 30px;font-size: 15px" name="stop_standard" value="MAP">MAP</option>
+                        <option style="width: 70px; height: 30px;font-size: 15px" name="stop_standard" value="Precision">Precision</option>
+                        <option style="width: 70px; height: 30px;font-size: 15px" name="stop_standard" value="GAUC">GAUC</option>
+                        <option style="width: 70px; height: 30px;font-size: 15px" name="stop_standard" value="ItemCoverage">ItemCoverage</option>
+                        <option style="width: 70px; height: 30px;font-size: 15px" name="stop_standard" value="AveragePopularity">AveragePopularity</option>
+                        <option style="width: 70px; height: 30px;font-size: 15px" name="stop_standard" value="GiniIndex">GiniIndex</option>
+                        <option style="width: 70px; height: 30px;font-size: 15px" name="stop_standard" value="ShannonEntropy">ShannonEntropy</option>
+                        <option style="width: 70px; height: 30px;font-size: 15px" name="stop_standard" value="TailPercentage">TailPercentage</option>
+                        <option style="width: 70px; height: 30px;font-size: 15px" name="stop_standard" value="AUC">AUC</option>
+                        <option style="width: 70px; height: 30px;font-size: 15px" name="stop_standard" value="MAE">MAE</option>
+                        <option style="width: 70px; height: 30px;font-size: 15px" name="stop_standard" value="RMSE">RMSE</option>
+                        <option style="width: 70px; height: 30px;font-size: 15px" name="stop_standard" value="LogLoss">LogLoss</option>
+                    </select>
+                </td>
+            </tr>
+
+            <tr>
+                <td>
+                    提前停止训练的topk
+                </td>
+                <td>
+                    <input type="number" style="width: 200px; height: 20px;font-size: 15px" name="topK" max="10000" min="10" step="1" value="10">
+                </td>
+            </tr>
+
+            <tr>
+                <td>
+                    评测的batch_size
+                </td>
+                <td>
+                    <input type="number" style="width: 200px; height: 20px;font-size: 15px" name="eval_batch_size" max="4096" min="16" step="16" value="16">
+                </td>
+            </tr>
+        </table>
+
+
+    <input type="submit" style="width: 200px; height: 30px;font-size: 15px;background-color: #D7D0D0FF;border-radius: 5px" value="确认提交">
+    <input type="reset" style="width: 200px; height: 30px;font-size: 15px;background-color: #D7D0D0FF;border-radius: 5px" value="重置">
+</form>
+    </div>
+
+</body>
+</html>
