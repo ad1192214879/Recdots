@@ -542,10 +542,10 @@ def insert_db(insert_sql):
     """插入"""
     # 建立数据库连接
     db = pymysql.connect(
-        host="localhost",
-        port=3306,
+        host="bj-cynosdbmysql-grp-dhy2tfps.sql.tencentcdb.com",
+        port=29545,
         user="root",
-        passwd="123456",
+        passwd="recdots_123456",
         db="recdots"
     )
     # 通过 cursor() 创建游标对象
@@ -569,10 +569,10 @@ def select_db(select_sql):
     """查询"""
     # 建立数据库连接
     db = pymysql.connect(
-        host="localhost",
-        port=3306,
+        host="bj-cynosdbmysql-grp-dhy2tfps.sql.tencentcdb.com",
+        port=29545,
         user="root",
-        passwd="123456",
+        passwd="recdots_123456",
         db="recdots"
     )
     # 通过 cursor() 创建游标对象，并让查询结果以字典格式输出
@@ -591,10 +591,10 @@ def update_db(update_sql):
         ''' 更新数据库操作 '''
 
         db = pymysql.connect(
-            host="localhost",
-            port=3306,
+            host="bj-cynosdbmysql-grp-dhy2tfps.sql.tencentcdb.com",
+            port=29545,
             user="root",
-            passwd="123456",
+            passwd="recdots_123456",
             db="recdots"
         )
 

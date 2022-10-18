@@ -87,9 +87,9 @@ DATABASES = {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'recdots', # 使用的数据库
         'USER': 'root', # 数据库用户名
-        'PASSWORD': '123456', # 数据库密码
-        'HOST': 'localhost', # 服务器的ip
-        'PORT': 3306, # mysql运行的端口
+        'PASSWORD': 'recdots_123456', # 数据库密码
+        'HOST': 'bj-cynosdbmysql-grp-dhy2tfps.sql.tencentcdb.com', # 服务器的ip
+        'PORT': 29545, # mysql运行的端口
     }
 }
 

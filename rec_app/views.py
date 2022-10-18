@@ -93,29 +93,27 @@ def result(request):
         return render(request, "rec_result.html")
 
     elif request.method == "POST":
-                uid = request.POST.get('uid')
-                # print(uid)
+        uid = request.POST.get('uid')
 
-                data = list(Rec.objects.filter(user_id = uid).all())  #
-                # print(data)
-                List = []
+        # 在这里加一个判断是否传入的uid存在于数据库当中
 
-                for i in range(10):
-                    one = {'item_id' : '', 'item_name' : ''}
-                    n_id = data[i].item_ids
-                    data1 = list(Item.objects.filter(item_id=n_id).all())
-                    # print(data1)
-                    n_name = data1[0].item_name
-                    one['item_id'] = str(n_id)
-                    one['item_name'] = n_name
-                    # print(one)
-                    List.append(one)
-                print(List)
-                # List = List
-                #
-                # List = [{'item_id': '123', 'item_name': 'zhongguo918'},{'item_id': '1234', 'item_name': 'zhongguo918'},{'item_id': '12345', 'item_name': 'zhongguo918'},{'item_id': '123456', 'item_name': 'zhongguo918'}]
+        data = list(Rec.objects.filter(user_id = uid).all())  #
+        List = []
 
-                return render(request, "rec_result.html", {'List':List, 'uid': uid})
+        for i in range(10):
+            one = {'item_id' : '', 'item_name' : ''}
+            n_id = data[i].item_ids
+            data1 = list(Item.objects.filter(item_id=n_id).all())
+            # print(data1)
+            n_name = data1[0].item_name
+            one['item_id'] = str(n_id)
+            one['item_name'] = n_name
+            # print(one)
+            List.append(one)
+
+        print(List)
+
+        return render(request, "rec_result.html", {'List':List, 'uid': uid})
 
 # def result(request):
 #     global uid
@@ -163,10 +161,10 @@ def select_db(select_sql):
     """查询"""
     # 建立数据库连接
     db = pymysql.connect(
-        host="localhost",
-        port=3306,
+        host="bj-cynosdbmysql-grp-dhy2tfps.sql.tencentcdb.com",
+        port=29545,
         user="root",
-        passwd="123456",
+        passwd="recdots_123456",
         db="recdots"
     )
     # 通过 cursor() 创建游标对象，并让查询结果以字典格式输出
