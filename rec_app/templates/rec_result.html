@@ -1,0 +1,88 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>推荐结果</title>
+</head>
+
+<body>
+
+<div style="align-self: center; height: 50px">
+    <h2 class="title" align="center" position="fixed">查看推荐结果列表</h2>
+    <hr>
+</div>
+
+<br>
+
+<div style="width: 50%">
+    <form method="post">
+        {% csrf_token %}
+        用户ID：<input type="text" style="width: 200px; height: 20px;font-size: 15px" name="uid" placeholder="请输入你的用户ID" required>
+        <input type="submit" style="width: 50px; height: 30px;font-size: 15px;border-radius: 10px" value="提交">
+    </form>
+</div>
+
+   {% if uid != none %}
+       <div style="height: 20px;align: center">
+           当前登录的用户ID为：{{ uid }}
+       </div>
+       {% else %}
+       <div>
+           请输入你的用户ID
+       </div>
+   {% endif %}
+<br>
+<div>
+    <table width="100%">
+    <thead>
+    <tr>
+        <th style="width: 20%" height="10px">item_id</th>
+        <th style="width: 60%" height="10px">item_name</th>
+        <th style="width: 20%" height="10px">操作</th>
+    </tr>
+    </thead>
+    <tbody>
+    {% for item in List %}
+        <tr>
+            <td style="text-align: center">
+                {{ item.item_id }}
+            </td>
+            <td style="text-align: center">
+                {{ item.item_name }}
+            </td>
+            <td style="text-align: center">
+                <button name="{{ item.item_id }}" onclick="f('{{ item.item_id }}', '{{ uid }}')" type="submit" value="{{ item.item_id }}">修改</button>
+            </td>
+        </tr>
+    {% endfor %}
+</tbody>
+
+</table>
+</div>
+<div>
+
+</div>
+
+
+</body>
+
+<script src="https://code.jquery.com/jquery-1.12.4.min.js" integrity="sha256-ZosEbRLbNQzLpnKIkEdrPv7lOy9C27hHQ+Xp8a4MxAQ=" crossorigin="anonymous"></script>
+<script src="{% static 'js/jquery.cookie.js' %}"></script>
+<script>
+    function f(t, uid) {
+        var loadNewTable = document.getElementsByName("")
+        console.log(t)
+
+        $.ajax({
+            url:'',
+            method:'post',
+            data:{loadNewTable: t, uid: uid},
+            headers:{"X-CSRFToken":$.cookie("csrftoken")},
+            success:function (data) {
+                alert('添加成功！')
+            }
+        })
+    }
+</script>
+</html>

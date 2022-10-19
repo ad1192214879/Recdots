@@ -1,0 +1,17 @@
+h2 {
+    text-align: center;
+}
+
+div {
+    align-self: center;
+    margin: 0px auto
+}
+
+table {
+    height: 300px;
+}
+
+table tr {
+    width: 250px;
+    height: 70px;
+}
