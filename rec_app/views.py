@@ -111,7 +111,7 @@ def result(request):
             # print(one)
             List.append(one)
 
-        print(List)
+        # print(List)
 
         return render(request, "rec_result.html", {'List':List, 'uid': uid})
 
@@ -145,15 +145,15 @@ def result(request):
 #
 #         return render(request, "rec_result.html", {'List':List})
 
-def addToBehaviour(request):
-    global uid
-    global List
-    if request.method == "POST":
-        itemid = request.POST['itemid']
-        # 在这里将itemid加到那个behaviour表里
-        print(itemid)
-
-        return redirect('../recResult')  #, args = {'List':List}
+# def addToBehaviour(request):
+#     global uid
+#     global List
+#     if request.method == "POST":
+#         itemid = request.POST['itemid']
+#         # 在这里将itemid加到那个behaviour表里
+#         print(itemid)
+#
+#         return redirect('../recResult')  #, args = {'List':List}
 
 
 

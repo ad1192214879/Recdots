@@ -15,6 +15,9 @@ import csv
 # import pymysql
 import pymysql
 
+from rec_app import log
+import logging
+
 
 def topK_scores(test, predict, topk, user_count, item_count):
 
@@ -134,7 +137,7 @@ class BPR():
 
     # 生成一个用户数*项目数大小的全0矩阵 user_count行，item_count列的列表
     test_data = np.zeros((user_count, item_count))
-    print("test_data_type", type(test_data))
+    # print("test_data_type", type(test_data))
     # 生成一个一维的全0矩阵
     test = np.zeros(size_u_i)
     # 再生成一个一维的全0矩阵
@@ -297,7 +300,7 @@ class BPR():
             r_uj = np.dot(self.U[u], self.V[j].T) + self.biasV[j]
             r_uij = r_ui - r_uj
             loss_func = -1.0 / (1 + np.exp(r_uij))
-            print(loss_func)
+            # print(loss_func)
             # except:
             #     continue
 
@@ -390,6 +393,10 @@ class BPR():
     def main(self):
         # 获取U-I的{1:{2,5,1,2}....}数据
         # user_ratings_train = self.load_data(self.train_data_path)
+        logger = logging.getLogger()
+        logs = log.CommonLog(logger, "rec_app/rec_log/offline_tarin.log")
+        logs.info('Launch the Django service and start offline training!')
+        start_offline_train = time.time()
         self.load_data(self.train_data_path)
 
         # print(user_ratings_train)
@@ -404,9 +411,18 @@ class BPR():
                     self.test[u * self.item_count + item] = 0
         # 离线训练
         for i in range(self.train_count):
+            start_time = time.time()
             self.train()  # 训练train_count次完成
+            end_time = time.time()
+            # 计算每一轮offline_train的时长
+            each_duration = str(round((end_time - start_time) * 1000, 2))
+            logs.info('Finish the ' + str(i) + ' th offline training. Using time ' + each_duration + ' ms.')
         predict_matrix = self.predict(self.U, self.V) #??????????????
-        print(predict_matrix)
+        end_offline_train = time.time()
+        duration = str(round((end_offline_train - start_offline_train), 3))
+        logs.info('Finish offline training. Total time : ' + str(duration) + ' s.\n' +
+                                                                             '---------------------------------------------------------------------------------------------------------------')
+        # print(predict_matrix)
         # ???
         # import pdb; pdb.set_trace()
 
@@ -441,7 +457,7 @@ class BPR():
                 # # insert_sql2 = "INSERT INTO rec_his(id, user_id, item_ids, create_time) VALUES(%d, %d, %d, str_to_date(%s,'%%Y-%%m-%%d %%H:%%M:%%S'))" % (id, user_id, item_ids, now_time)
                 # insert_db(insert_sql2)
                 id += 1
-                print(user_id, item_ids)
+                # print(user_id, item_ids)
         # topK_matrix1 = naive_arg_topK(predict_matrix, 10, axis=1)
         # print(topK_matrix1)
 
@@ -491,11 +507,9 @@ class BPR():
             # print(old_time > m[0]['create_time'])
 
 
-
-
         self.predict_ = predict_matrix.getA().reshape(-1)  # .getA()将自身矩阵变量matrix转化为nd array类型的变量 reshape(-1)#改成一串，没有行列的列表
         # import pdb; pdb.set_trace()
-        print("predict_new", self.predict_)
+        # print("predict_new", self.predict_)
         self.predict_ = self.pre_handel(self.predict_, self.item_count)
         # auc_score = roc_auc_score(self.test, self.predict_)
         # print('AUC:', auc_score)
