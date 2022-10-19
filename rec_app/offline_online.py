@@ -140,7 +140,7 @@ class BPR():
     # 再生成一个一维的全0矩阵
     predict_ = np.zeros(size_u_i)
 
-    def __init__(self, hash_user, user_hash, hash_item, item_hash, user_ratings, U, V, biasV):
+    def __init__(self, hash_user, user_hash, hash_item, item_hash, user_ratings, U, V, biasV, uid_clicked):
         self.hash_user = hash_user
         self.user_hash = user_hash
         self.hash_item = hash_item
@@ -149,6 +149,7 @@ class BPR():
         self.U = U
         self.V = V
         self.biasV = biasV
+        self.uid_clicked = uid_clicked
         # # hash映射
         # hash_user = dict()  # hash映射 0開始的id：本身id
         # user_hash = dict()  # hash映射 本身id：0開始的id
@@ -227,41 +228,27 @@ class BPR():
         '''
         # 获取测试集的评分矩阵
     def load_test_data(self, path):
-        file = open('test1.txt', 'r')
-        for line in file:
-            # try:
-                line = line.split('\t')
-                user = int(line[0])
-                item = int(line[1])
-                u = self.user_hash[user]
-                i = self.item_hash[item]
-                # self.test_data[u - 1][i - 1] = 1       #???
-                self.test_data[u][i] = 1  # ???
-        # except:
-            #     print('第{0}条数据处理失败'.format(line))
-
-        # with open('test.csv', encoding='utf-8') as fp:
-        #     reader = csv.reader(fp)
-        #     # 遍历数据
-        #     index = 0
-        #     for line in reader:
+        # file = open('test1.txt', 'r')
+        # for line in file:
+        #     # try:
+        #         line = line.split('\t')
         #         user = int(line[0])
         #         item = int(line[1])
-        #         self.test_data[hash_user[user] - 1][item - 1] = 1
-                # user_hash.append(u)
-                # user_hash1 = set(user_hash)
-                # user_hash2 = dict()
-                # hash_user = dict()
-                # index1 = 0
-                # for item in user_hash1:
-                #     user_hash2[index1] = item
-                #     hash_user[item] = index1
-                #     # print(user_hash2[index1])
-                #     # print(hash_user[item])
-                #     index1 += 1
-                # index += 1
-                # # print(hash_user)
-                # user_ratings[u].add(i)
+        #         u = self.user_hash[user]
+        #         i = self.item_hash[item]
+        #         # self.test_data[u - 1][i - 1] = 1       #???
+        #         self.test_data[u][i] = 1  # ???
+        # # except:
+        #     #     print('第{0}条数据处理失败'.format(line))
+
+        select_sql = 'SELECT * FROM behavior ORDER BY create_time DESC limit 200'
+        select_result = select_db(select_sql)
+        for i in range(200):
+            user = select_result[i]['user_id']
+            item = select_result[i]['item_id']
+            u = self.user_hash[user]
+            i = self.item_hash[item]
+            self.test_data[u][i] = 1
 
         '''
         函数说明：对训练集数据字典处理，通过随机选取，（用户，交互，为交互）三元组，更新分解后的两个矩阵
@@ -297,7 +284,7 @@ class BPR():
             r_uj = np.dot(self.U[u], self.V[j].T) + self.biasV[j]
             r_uij = r_ui - r_uj
             loss_func = -1.0 / (1 + np.exp(r_uij))
-            print(loss_func)
+            # print(loss_func)
             # except:
             #     continue
 
@@ -313,6 +300,7 @@ class BPR():
             u = self.user_hash[user]
             i = self.item_hash[item]
             self.user_ratings[u].add(i)
+            self.uid_clicked[user].add(item)
             # 随机选取一个用户u没有评分的项目
             j = random.randint(0, self.item_count - 1)
             while j in self.user_ratings[u]:
@@ -347,6 +335,9 @@ class BPR():
             select_sql = 'SELECT * FROM rec WHERE user_id="%d"'% user  # %s（）或者用format
             select_result = select_db(select_sql)
             index2 = select_result[0]['index2']
+            select_lastsql = 'SELECT * FROM rec_his ORDER BY create_time DESC limit 1'
+            select_last = select_db(select_lastsql)
+            id2 = select_last[0]['id'] + 1
             for y in range(10):
                 ii = topK_matrix1[u][y]
                 # topK_matrix1[x1][y1] = self.hash_item[topK_matrix1[x1][y1]]
@@ -355,10 +346,24 @@ class BPR():
                 print("index2:  "+str(index2))
                 print("user_id:  "+str(user_id))
                 print("item_ids:  "+str(item_ids))
+                A = time.time()
                 # update一下rec
                 update_sql = 'update rec set item_ids = "%d" where index2 = "%d"' % (item_ids, index2)
                 update_db(update_sql)
+
+                B = time.time()
+                print((B - A) * 1000)
+
+                # update rec_his
+                insert_sql2 = "INSERT INTO rec_his(id, user_id, item_ids, clicked_ids) VALUES(%d, %d, %d, %d)" % (id2, user_id, item_ids, int(item))
+                insert_db(insert_sql2)
+
+                C = time.time()
+                print((C - B) * 1000)
+
                 index2 += 1
+                id2 += 1
+
 
 
     '''
@@ -426,21 +431,36 @@ class BPR():
         #         topK_matrix1.itemset(y1, 1)
         #         print(y2)
         id = 0
+        select_lastsql = 'SELECT * FROM rec_his ORDER BY create_time DESC limit 1'
+        select_last = select_db(select_lastsql)
+        id2 = select_last[0]['id'] + 1
         for x1 in range(len(topK_matrix1)):
+            user_id = int(self.hash_user[x1])
+            select_sql = 'SELECT * FROM rec WHERE user_id="%d"' % user_id  # %s（）或者用format
+            select_result = select_db(select_sql)
             for y1 in range(len(topK_matrix1[x1])):
                 index2 =id
                 m = topK_matrix1[x1][y1]
                 # topK_matrix1[x1][y1] = self.hash_item[topK_matrix1[x1][y1]]
-                user_id = int(self.hash_user[x1])
                 item_ids = int(self.hash_item[m])
                 now_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
-                # insert_sql1 = "INSERT INTO rec(index2, user_id, item_ids) VALUES(%d, %d, %d)" % (id, user_id, item_ids)
                 # # insert_sql1 = "INSERT INTO rec(index2, user_id, item_ids, create_time) VALUES(%d, %d, %d, str_to_date(%s,'%%Y-%%m-%%d %%H:%%M:%%S'))" % (id, user_id, item_ids, now_time)
-                # insert_db(insert_sql1)
+                if (select_result == ()):
+                    #insert
+                    insert_sql1 = "INSERT INTO rec(index2, user_id, item_ids) VALUES(%d, %d, %d)" % (id, user_id, item_ids)
+                    insert_db(insert_sql1)
+                else:
+                    #update
+                    update_sql = 'update rec set item_ids = "%d" where index2 = "%d"' % (item_ids, id)
+                    update_db(update_sql)
+
+                insert_sql2 = "INSERT INTO rec_his(id, user_id, item_ids) VALUES(%d, %d, %d)" % (id2, user_id, item_ids)
+                insert_db(insert_sql2)
                 # insert_sql2 = "INSERT INTO rec_his(id, user_id, item_ids) VALUES(%d, %d, %d)" % (id, user_id, item_ids)
                 # # insert_sql2 = "INSERT INTO rec_his(id, user_id, item_ids, create_time) VALUES(%d, %d, %d, str_to_date(%s,'%%Y-%%m-%%d %%H:%%M:%%S'))" % (id, user_id, item_ids, now_time)
                 # insert_db(insert_sql2)
                 id += 1
+                id2 += 1
                 print(user_id, item_ids)
         # topK_matrix1 = naive_arg_topK(predict_matrix, 10, axis=1)
         # print(topK_matrix1)
