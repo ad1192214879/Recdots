@@ -313,8 +313,13 @@ class BPR():
             self.biasV[j] += -self.lr * (-loss_func + self.reg * self.biasV[j])
 
     def online_train(self, user, item):
+        # 获取online_train开始时间
+        start_online_train = time.time()
+
         logger = logging.getLogger()
         logs = log.CommonLog(logger, "rec_app/rec_log/online_tarin.log")
+        logs.info('Start online training!\n')
+
         u = self.user_hash[user]
         i = self.item_hash[item]
         self.user_ratings[u].add(i)
@@ -346,25 +351,48 @@ class BPR():
         self.biasV[j] += -self.lr * (-loss_func + self.reg * self.biasV[j])
 
         predict_matrix = self.predict(self.U, self.V)
-        print(predict_matrix)
+        # print(predict_matrix)
         topK_matrix = partition_arg_topK(predict_matrix, 10, axis=1)
         topK_matrix1 = np.array(topK_matrix)
 
+
+        # 开始查询
+        start_select = time.time()
+
         select_sql = 'SELECT * FROM rec WHERE user_id="%d"'% user  # %s（）或者用format
         select_result = select_db(select_sql)
+
+        end_select = time.time()
+        select_duration = str(round((end_select - start_select) * 1000, 2))
+        logs.info('Query the user whose user ID is ' + str(user) + ' from the database. Using time ' + str(select_duration) + ' ms.')
+
         index2 = select_result[0]['index2']
         for y in range(10):
             ii = topK_matrix1[u][y]
             # topK_matrix1[x1][y1] = self.hash_item[topK_matrix1[x1][y1]]
             user_id = user
             item_ids = int(self.hash_item[ii])
-            print("index2:  "+str(index2))
-            print("user_id:  "+str(user_id))
-            print("item_ids:  "+str(item_ids))
+
+            # print("index2:  "+str(index2))
+            # print("user_id:  "+str(user_id))
+            # print("item_ids:  "+str(item_ids))
             # update一下rec
+            start_update = time.time()
             update_sql = 'update rec set item_ids = "%d" where index2 = "%d"' % (item_ids, index2)
             update_db(update_sql)
+            end_update = time.time()
+            update_duration = str(round((end_update - start_update) * 1000, 2))
+
+            logs.info('Insert a row of data. Using time ' + str(update_duration) + ' ms.')
+
             index2 += 1
+
+        end_online_train = time.time()
+        online_train_duration = str(round((end_online_train - start_online_train) * 1000, 2))
+        logs.info('Finish online train. Total time: ' + str(online_train_duration) + ' ms.\n' +
+                                                                             '---------------------------------------------------------------------------------------------------------------\n'+
+                                                                             '---------------------------------------------------------------------------------------------------------------\n'+
+                                                                             '---------------------------------------------------------------------------------------------------------------')
 
 
     '''
@@ -396,10 +424,13 @@ class BPR():
     def main(self):
         # 获取U-I的{1:{2,5,1,2}....}数据
         # user_ratings_train = self.load_data(self.train_data_path)
+
         logger = logging.getLogger()
         logs = log.CommonLog(logger, "rec_app/rec_log/offline_tarin.log")
         logs.info('Launch the Django service and start offline training!')
+        # 获取offline_train开始时间
         start_offline_train = time.time()
+
         self.load_data(self.train_data_path)
 
         # print(user_ratings_train)
@@ -422,8 +453,10 @@ class BPR():
             logs.info('Finish the ' + str(i) + ' th offline training. Using time ' + each_duration + ' ms.')
         predict_matrix = self.predict(self.U, self.V) #??????????????
         end_offline_train = time.time()
-        duration = str(round((end_offline_train - start_offline_train), 3))
+        duration = str(round((end_offline_train - start_offline_train), 2))
         logs.info('Finish offline training. Total time : ' + str(duration) + ' s.\n' +
+                                                                             '---------------------------------------------------------------------------------------------------------------\n'+
+                                                                             '---------------------------------------------------------------------------------------------------------------\n'+
                                                                              '---------------------------------------------------------------------------------------------------------------')
         # print(predict_matrix)
         # ???
