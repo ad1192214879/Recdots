@@ -73,9 +73,9 @@ def result(request):
 
     # logger = logging.getLogger()
     # logs = log.CommonLog(logger, "rec_app/reclog/log.log")
-    global test
-    test = 5555555555555555
-    print(test)
+    # global test
+    # test = 5555555555555555
+    # print(test)
 
     if request.is_ajax():
         itemid = request.POST.get('loadNewTable')

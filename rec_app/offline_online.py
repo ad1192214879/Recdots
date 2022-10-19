@@ -313,55 +313,58 @@ class BPR():
             self.biasV[j] += -self.lr * (-loss_func + self.reg * self.biasV[j])
 
     def online_train(self, user, item):
-            u = self.user_hash[user]
-            i = self.item_hash[item]
-            self.user_ratings[u].add(i)
-            # 随机选取一个用户u没有评分的项目
-            j = random.randint(0, self.item_count - 1)
-            while j in self.user_ratings[u]:
-                j = random.randint(0, self.item_count - 1) # 找到一个item，没有被评分
-            # 构成一个三元组（user:u,item_have_score:i,item_no_score:j)
-            # # python中的取值从0开始
-            # u = u - 1
-            # i = i - 1
-            # j = j - 1
-            #BPR
-            try:
-                r_ui = np.dot(self.U[u], self.V[i].T) + self.biasV[i]  # np.dot表示向量内积或矩阵乘法 Xui=WU*Hi=Wuf*Hif(f在1-k的累加)
-                r_uj = np.dot(self.U[u], self.V[j].T) + self.biasV[j]
-                r_uij = r_ui - r_uj
-                loss_func = -1.0 / (1 + np.exp(r_uij))
-            except:
-                print("error")
+        logger = logging.getLogger()
+        logs = log.CommonLog(logger, "rec_app/rec_log/online_tarin.log")
+        u = self.user_hash[user]
+        i = self.item_hash[item]
+        self.user_ratings[u].add(i)
+        # 随机选取一个用户u没有评分的项目
+        j = random.randint(0, self.item_count - 1)
+        while j in self.user_ratings[u]:
+            j = random.randint(0, self.item_count - 1) # 找到一个item，没有被评分
+        # 构成一个三元组（user:u,item_have_score:i,item_no_score:j)
+        # # python中的取值从0开始
+        # u = u - 1
+        # i = i - 1
+        # j = j - 1
+        #BPR
+        try:
+            # np.dot表示向量内积或矩阵乘法 Xui=WU*Hi=Wuf*Hif(f在1-k的累加)
+            r_ui = np.dot(self.U[u], self.V[i].T) + self.biasV[i]
+            r_uj = np.dot(self.U[u], self.V[j].T) + self.biasV[j]
+            r_uij = r_ui - r_uj
+            loss_func = -1.0 / (1 + np.exp(r_uij))
+        except:
+            print("error")
 
             # 更新这个u和v矩阵
-            self.U[u] += -self.lr * (loss_func * (self.V[i] - self.V[j]) + self.reg * self.U[u])
-            self.V[i] += -self.lr * (loss_func * self.U[u] + self.reg * self.V[i])
-            self.V[j] += -self.lr * (loss_func * (-self.U[u]) + self.reg * self.V[j])
-            # 更新偏置项
-            self.biasV[i] += -self.lr * (loss_func + self.reg * self.biasV[i])
-            self.biasV[j] += -self.lr * (-loss_func + self.reg * self.biasV[j])
+        self.U[u] += -self.lr * (loss_func * (self.V[i] - self.V[j]) + self.reg * self.U[u])
+        self.V[i] += -self.lr * (loss_func * self.U[u] + self.reg * self.V[i])
+        self.V[j] += -self.lr * (loss_func * (-self.U[u]) + self.reg * self.V[j])
+        # 更新偏置项
+        self.biasV[i] += -self.lr * (loss_func + self.reg * self.biasV[i])
+        self.biasV[j] += -self.lr * (-loss_func + self.reg * self.biasV[j])
 
-            predict_matrix = self.predict(self.U, self.V)
-            print(predict_matrix)
-            topK_matrix = partition_arg_topK(predict_matrix, 10, axis=1)
-            topK_matrix1 = np.array(topK_matrix)
+        predict_matrix = self.predict(self.U, self.V)
+        print(predict_matrix)
+        topK_matrix = partition_arg_topK(predict_matrix, 10, axis=1)
+        topK_matrix1 = np.array(topK_matrix)
 
-            select_sql = 'SELECT * FROM rec WHERE user_id="%d"'% user  # %s（）或者用format
-            select_result = select_db(select_sql)
-            index2 = select_result[0]['index2']
-            for y in range(10):
-                ii = topK_matrix1[u][y]
-                # topK_matrix1[x1][y1] = self.hash_item[topK_matrix1[x1][y1]]
-                user_id = user
-                item_ids = int(self.hash_item[ii])
-                print("index2:  "+str(index2))
-                print("user_id:  "+str(user_id))
-                print("item_ids:  "+str(item_ids))
-                # update一下rec
-                update_sql = 'update rec set item_ids = "%d" where index2 = "%d"' % (item_ids, index2)
-                update_db(update_sql)
-                index2 += 1
+        select_sql = 'SELECT * FROM rec WHERE user_id="%d"'% user  # %s（）或者用format
+        select_result = select_db(select_sql)
+        index2 = select_result[0]['index2']
+        for y in range(10):
+            ii = topK_matrix1[u][y]
+            # topK_matrix1[x1][y1] = self.hash_item[topK_matrix1[x1][y1]]
+            user_id = user
+            item_ids = int(self.hash_item[ii])
+            print("index2:  "+str(index2))
+            print("user_id:  "+str(user_id))
+            print("item_ids:  "+str(item_ids))
+            # update一下rec
+            update_sql = 'update rec set item_ids = "%d" where index2 = "%d"' % (item_ids, index2)
+            update_db(update_sql)
+            index2 += 1
 
 
     '''
