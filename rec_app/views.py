@@ -163,35 +163,7 @@ def result(request):
 
                 return render(request, "rec_result.html", {'List':List, 'uid': uid})
 
-# def result(request):
-#     global uid
-#     global List
-#     if request.method == "GET":
-#         return render(request, "rec_result.html")
-#     else:
-#         uid = request.POST.get('uid')
-#         # print(uid)
-#
-#         data = list(rec_app.objects.filter(user_id = uid).all())  #
-#         # print(data)
-#         List = []
-#
-#         for i in range(10):
-#             one = {'n_id' : '', 'n_name' : ''}
-#             n_id = data[i].item_ids
-#             data1 = list(Item.objects.filter(item_id=n_id).all())
-#             # print(data1)
-#             n_name = data1[0].item_name
-#             one['n_id'] = str(n_id)
-#             one['n_name'] = n_name
-#             # print(one)
-#             List.append(one)
-#         print(List)
-#         # List = List
-#         #
-#         # List = [{'item_id': '123', 'item_name': 'zhongguo918'},{'item_id': '1234', 'item_name': 'zhongguo918'},{'item_id': '12345', 'item_name': 'zhongguo918'},{'item_id': '123456', 'item_name': 'zhongguo918'}]
-#
-#         return render(request, "rec_result.html", {'List':List})
+
 
 def addToBehaviour(request):
     global uid
