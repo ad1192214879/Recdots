@@ -356,31 +356,38 @@ class BPR():
             select_lastsql = 'SELECT * FROM rec_his ORDER BY create_time DESC limit 1'
             select_last = select_db(select_lastsql)
             id2 = select_last[0]['id'] + 1
+            item_ids = ''
+            user_id = user
             for y in range(10):
                 ii = topK_matrix1[u][y]
                 # topK_matrix1[x1][y1] = self.hash_item[topK_matrix1[x1][y1]]
-                user_id = user
-                item_ids = int(self.hash_item[ii])
-                print("index2:  "+str(index2))
-                print("user_id:  "+str(user_id))
-                print("item_ids:  "+str(item_ids))
-                # update一下rec
-                start_update = time.time()
-                update_sql = 'update rec set item_ids = "%d" where index2 = "%d"' % (item_ids, index2)
-                update_db(update_sql)
 
-                # update rec_his
-                insert_sql2 = "INSERT INTO rec_his(id, user_id, item_ids, clicked_ids) VALUES(%d, %d, %d, %d)" % (id2, user_id, item_ids, int(item))
-                insert_db(insert_sql2)
+                item_id = int(self.hash_item[ii])
+                item_ids = item_ids + str(item_id) + ','
 
-                end_update = time.time()
-                update_duration = str(round((end_update - start_update) * 1000, 2))
+            item_ids = item_ids[:-1]
+            print(item_ids)
+            # update一下rec
+            start_update = time.time()
+            update_sql = 'update rec set item_ids = "%s" where index2 = "%d"' % (item_ids, index2)
+            update_db(update_sql)
 
-                logs.info('Insert a row of data. Using time ' + str(update_duration) + ' ms.')
+            # update rec_his
+            insert_sql2 = "INSERT INTO rec_his(id, user_id, item_ids, clicked_ids) VALUES(%d, %d, '%s', %d)" % (
+            id2, user_id, item_ids, int(item))
+            insert_db(insert_sql2)
+
+            end_update = time.time()
+            update_duration = str(round((end_update - start_update) * 1000, 2))
+
+            logs.info('Insert a row of data. Using time ' + str(update_duration) + ' ms.')
 
 
-                index2 += 1
-                id2 += 1
+
+
+
+
+
 
             end_online_train = time.time()
             online_train_duration = str(round((end_online_train - start_online_train) * 1000, 2))
@@ -457,7 +464,7 @@ class BPR():
                                                                              '---------------------------------------------------------------------------------------------------------------\n'+
                                                                              '---------------------------------------------------------------------------------------------------------------')
 
-
+        start_offline_insert = time.time()
         print(predict_matrix)
         # ???
         # import pdb; pdb.set_trace()
@@ -485,30 +492,44 @@ class BPR():
             user_id = int(self.hash_user[x1])
             select_sql = 'SELECT * FROM rec WHERE user_id="%d"' % user_id  # %s（）或者用format
             select_result = select_db(select_sql)
+            item_ids = ''
             for y1 in range(len(topK_matrix1[x1])):
                 index2 =id
                 m = topK_matrix1[x1][y1]
                 # topK_matrix1[x1][y1] = self.hash_item[topK_matrix1[x1][y1]]
-                item_ids = int(self.hash_item[m])
-                now_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+                item_id = int(self.hash_item[m])
+                item_ids = item_ids + str(item_id) + ','
                 # # insert_sql1 = "INSERT INTO rec(index2, user_id, item_ids, create_time) VALUES(%d, %d, %d, str_to_date(%s,'%%Y-%%m-%%d %%H:%%M:%%S'))" % (id, user_id, item_ids, now_time)
-                if (select_result == ()):
-                    #insert
-                    insert_sql1 = "INSERT INTO rec(index2, user_id, item_ids) VALUES(%d, %d, %d)" % (id, user_id, item_ids)
-                    insert_db(insert_sql1)
-                else:
-                    #update
-                    update_sql = 'update rec set item_ids = "%d" where index2 = "%d"' % (item_ids, id)
-                    update_db(update_sql)
 
-                insert_sql2 = "INSERT INTO rec_his(id, user_id, item_ids) VALUES(%d, %d, %d)" % (id2, user_id, item_ids)
-                insert_db(insert_sql2)
                 # insert_sql2 = "INSERT INTO rec_his(id, user_id, item_ids) VALUES(%d, %d, %d)" % (id, user_id, item_ids)
                 # # insert_sql2 = "INSERT INTO rec_his(id, user_id, item_ids, create_time) VALUES(%d, %d, %d, str_to_date(%s,'%%Y-%%m-%%d %%H:%%M:%%S'))" % (id, user_id, item_ids, now_time)
                 # insert_db(insert_sql2)
-                id += 1
-                id2 += 1
-                print(user_id, item_ids)
+
+            item_ids = item_ids[:-1]
+            print(user_id, item_ids)
+            if (select_result == ()):
+                # insert
+                insert_sql1 = "INSERT INTO rec(index2, user_id, item_ids) VALUES(%d, %d, '%s')" % (id, user_id, item_ids)
+                insert_db(insert_sql1)
+            else:
+                # update
+                update_sql = 'update rec set item_ids = "%s" where index2 = "%d"' % (item_ids, id)
+                update_db(update_sql)
+
+            insert_sql2 = "INSERT INTO rec_his(id, user_id, item_ids) VALUES(%d, %d, '%s')" % (id2, user_id, item_ids)
+            insert_db(insert_sql2)
+
+            id += 1
+            id2 += 1
+
+
+        end_offline_insert = time.time()
+        duration = str(round((end_offline_insert - start_offline_insert), 2))
+        logs.info('Finish offline inserting rec and rec_his. Total time : ' + str(duration) + ' s.\n' +
+                                                                             '---------------------------------------------------------------------------------------------------------------\n'+
+                                                                             '---------------------------------------------------------------------------------------------------------------\n'+
+                                                                             '---------------------------------------------------------------------------------------------------------------')
+
         # topK_matrix1 = naive_arg_topK(predict_matrix, 10, axis=1)
         # print(topK_matrix1)
 
@@ -568,6 +589,17 @@ class BPR():
         # print('AUC:', auc_score)
         # Top-K evaluation
         # topK_scores(self.test, self.predict_, 5, self.user_count, self.item_count)
+
+        end_offline = time.time()
+        duration = str(round((end_offline - start_offline_train), 2))
+        logs.info('Finish offline inserting rec and rec_his. Total time : ' + str(duration) + ' s.\n' +
+                                                                             '---------------------------------------------------------------------------------------------------------------\n'+
+                                                                             '---------------------------------------------------------------------------------------------------------------\n'+
+                                                                             '---------------------------------------------------------------------------------------------------------------')
+
+
+
+
 
     # ???????????????????????????????????????????????????????????????в????????????????????
     # Paramaters:

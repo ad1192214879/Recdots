@@ -23,4 +23,5 @@ urlpatterns = [
     path('rec/', views.rec),
     path('recResult/', views.result),
     path('addToBehaviour/', views.addToBehaviour, name="addToBehaviour"),
+    path('test/', views.test),
 ]

@@ -78,11 +78,35 @@ global bpr
 bpr = BPR(hash_user, user_hash, hash_item, item_hash, user_ratings, U, V, biasV, uid_clicked)
 bpr.main()
 
+
+global test1
+test1 = 1
 # user = 4128772
 # item = 73633
 # bpr.online_train(user, item)
 
 
+def test(request):
+    if request.method == "GET":
+        # return render(request, "config.html")
+        print(request)
+        print(request.GET)
+        print(request.GET.get('uid'))
+        # print(request.GET['uid'])
+        print(123456789)
+        uid = int(request.GET.get('uid'))
+        select_sql = 'SELECT item_ids FROM rec WHERE user_id = "%d"'%uid
+        select_result = select_db(select_sql)
+        item_ids = select_result[0]['item_ids']
+        if 'uid' in request.GET:
+            return HttpResponse("连接成功"+item_ids)
+        else:
+            return HttpResponse("连接失败")
+    else:
+        data = request.POST
+        print(data)
+        # return HttpResponse("配置成功")
+        return HttpResponse(test1)
 
 
 def rec(request):
@@ -90,6 +114,9 @@ def rec(request):
     # print(data)
     # print(111)
     if request.method == "GET":
+        itemid = request.GET
+        print(itemid)
+        print(123)
         return render(request, "config.html")
     else:
         """获取推荐配置表单数据"""
@@ -142,13 +169,13 @@ def result(request):
                 # data = list(Rec.objects.filter(user_id = uid).all())  #
                 # print(data)
                 List = []
-
+                items_list = select_result[0]['item_ids'].split(',')
                 for i in range(10):
                     one = {'item_id' : '', 'item_name' : ''}
                     # n_id = data[i].item_ids
                     # data1 = list(Item.objects.filter(item_id=n_id).all())
                     # n_name = data1[0].item_name
-                    n_id = select_result[i]['item_ids']
+                    n_id = items_list[i]
                     select_sql = 'SELECT * FROM item WHERE item_id="%d"' % int(n_id)  # %s（）或者用format
                     select_result1 = select_db(select_sql)
                     print(select_result1)
