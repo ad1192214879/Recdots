@@ -2,6 +2,9 @@ from django.http import JsonResponse
 from django.shortcuts import render, HttpResponse, redirect
 import pymysql
 import sys
+
+from django.views.decorators.csrf import csrf_exempt
+
 sys.path.append("/rec/rec_app")
 sys.path.append("D:\\Recdots\\Recdots-master\\rec\\rec_app\\offline_online")
 
@@ -17,6 +20,8 @@ import numpy as np
 import time
 
 import pymysql
+
+
 
 def select_db(select_sql):
     """查询"""
@@ -40,13 +45,39 @@ def select_db(select_sql):
     db.close()
     return data
 
+def insert_db(insert_sql):
+    """插入"""
+    # 建立数据库连接
+    db = pymysql.connect(
+        host="localhost",
+        port=3306,
+        user="root",
+        passwd="123456",
+        db="recdots"
+    )
+    # 通过 cursor() 创建游标对象
+    cur = db.cursor()
+    try:
+        # 使用 execute() 执行sql
+        cur.execute(insert_sql)
+        # 提交事务
+        db.commit()
+    except Exception as e:
+        print("操作出现错误：{}".format(e))
+        # 回滚所有更改
+        db.rollback()
+    finally:
+        # 关闭游标
+        cur.close()
+        # 关闭数据库连接
+        db.close()
 
 # Create your views here.
 
 # 用户数
-user_count = 453
+user_count = 4000000
 # 物品数
-item_count = 23686
+item_count = 33980
 # k个主题，k数
 latent_factors = 20
 
@@ -86,6 +117,58 @@ test1 = 1
 # bpr.online_train(user, item)
 
 
+@csrf_exempt
+def addUser(request):
+    if request.method == "POST":
+        uid = int(request.POST.get('uid'))
+        select_sql = 'SELECT * FROM user WHERE user_id="%d"' % uid
+        select_result = select_db(select_sql)
+        if (select_result == ()):
+            # insert
+            insert_sql = "INSERT INTO user(user_id) VALUES(%d)" % uid
+            insert_db(insert_sql)
+            max_hash = max(zip(bpr.user_hash.values()))[0]
+            bpr.user_hash[uid] = max_hash + 1
+            print("the value of user_hash[uid] is "+str(bpr.user_hash[uid]))
+            bpr.hash_user[max_hash + 1] = uid
+            print("the value of hash_user[max_hash + 1] is "+str(bpr.hash_user[max_hash + 1]))
+            return HttpResponse("用户添加成功")
+        else:
+            return HttpResponse("用户已存在")
+        # print(request.POST.get('uid', ''))
+        # print(request.POST['uid'])
+        # print(request.body)
+        #return HttpResponse("添加成功")
+    else:
+        return HttpResponse("添加用户方式错误")
+
+@csrf_exempt
+def addItem(request):
+    if request.method == "POST":
+        item_id = int(request.POST.get('item_id'))
+        select_sql = 'SELECT * FROM item WHERE item_id="%d"' % item_id
+        select_result = select_db(select_sql)
+        if (select_result == ()):
+            # insert
+            insert_sql = "INSERT INTO item(item_id) VALUES(%d)" % item_id
+            insert_db(insert_sql)
+            max_hash = max(zip(bpr.item_hash.values()))[0]
+            bpr.item_hash[uid] = max_hash + 1
+            print("the value of user_hash[uid] is "+str(bpr.item_hash[uid]))
+            bpr.hash_item[max_hash + 1] = uid
+            print("the value of hash_item[max_hash + 1] is "+str(bpr.hash_item[max_hash + 1]))
+            return HttpResponse("商品添加成功")
+        else:
+            return HttpResponse("商品已存在")
+        # print(request.POST.get('uid', ''))
+        # print(request.POST['uid'])
+        # print(request.body)
+        #return HttpResponse("添加成功")
+    else:
+        return HttpResponse("添加商品方式错误")
+
+
+@csrf_exempt
 def test(request):
     if request.method == "GET":
         # return render(request, "config.html")
@@ -139,10 +222,24 @@ def result(request):
     test = 5555555555555555
     print(test)
 
+    # click交互
     if request.is_ajax():
         itemid = request.POST.get('loadNewTable')
         uid = request.POST.get('uid')
         print("ID:", itemid, "uid:", uid)
+
+        if int(itemid) not in bpr.hash_item.values():
+            return HttpResponse("商品不存在")
+        if int(uid) not in bpr.hash_user.values():
+            select_sql = 'SELECT * FROM user WHERE user_id="%d"' % int(uid)
+            select_result = select_db(select_sql)
+            if (select_result == ()):
+                return HttpResponse("用户不存在")
+            else:
+                #冷启动
+                print(123)
+                return HttpResponse("新用户")
+
         uid_clicked[int(uid)].add(int(itemid))
         A = time.time()
         bpr.online_train(int(uid), int(itemid))
@@ -158,6 +255,7 @@ def result(request):
         print(123456789)
         return render(request, "rec_result.html")
 
+    # 获取推荐结果
     elif request.method == "POST":
                 uid = request.POST.get('uid')
                 # print(uid)
@@ -170,7 +268,7 @@ def result(request):
                 # print(data)
                 List = []
                 items_list = select_result[0]['item_ids'].split(',')
-                for i in range(10):
+                for i in range(50):
                     one = {'item_id' : '', 'item_name' : ''}
                     # n_id = data[i].item_ids
                     # data1 = list(Item.objects.filter(item_id=n_id).all())

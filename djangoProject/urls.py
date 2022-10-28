@@ -24,4 +24,6 @@ urlpatterns = [
     path('recResult/', views.result),
     path('addToBehaviour/', views.addToBehaviour, name="addToBehaviour"),
     path('test/', views.test),
+    path('addUser/', views.addUser),
+    path('addItem/', views.addItem),
 ]

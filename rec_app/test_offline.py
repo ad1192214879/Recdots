@@ -15,6 +15,10 @@ import csv
 # import pymysql
 import pymysql
 
+import sys
+sys.path.append('..')
+sys.path.append('D:\\Recdots\\Recdots-master\\rec')
+
 from offline_online import BPR
 
 
@@ -22,9 +26,9 @@ if __name__ == '__main__':
     # 调用类的主函数
 
     # 用户数
-    user_count = 453
+    user_count = 459
     # 物品数
-    item_count = 23686
+    item_count = 33980
     # k个主题，k数
     latent_factors = 20
 
