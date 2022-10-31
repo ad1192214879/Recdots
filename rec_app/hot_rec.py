@@ -5,34 +5,44 @@ from itertools import islice
 
 def hot_rec():
 
-    item_list = []
-    with open('user_item.csv', encoding='utf-8') as fp:
-        reader = csv.reader(fp)
+    import pandas as pd
+    filename = 'D:\\Recdots\\Recdots-master\\rec\\rec_app\\user_item.csv'
+    total_lines = sum(1 for line in open(filename, encoding='utf-8'))
+    print('The total lines is ', total_lines)
 
-        # for line in reader:
-        for line in islice(reader, 1, None):
-            i = int(line[1])
-            item_list.append(i)
-        print("length of item :" + str(len(item_list)))
+    hot_list = [[0] * 50 for _ in range(7)]
 
+    csv_result = pd.read_csv('D:\\Recdots\\Recdots-master\\rec\\rec_app\\user_item.csv')
 
-    collection_items = Counter(item_list)
-    # print(collection_items)
-    # 还可以输出频率最大的n个元素,类型为list
-    most_counterNum = collection_items.most_common(20)
-    print(most_counterNum)
-    print(most_counterNum[0])  #元组(id，count)
-    print(most_counterNum[0][0])  #id
-    print(type(most_counterNum))
+    if total_lines >= 1000000:
+        start_line = total_lines - 1000000
+        end_line = total_lines
+    else:
+        start_line = 0
+        end_line = total_lines
 
-    hot_set = set()
-    for i in range(20):
-        hot_set.add(most_counterNum[i][0])
+    csv_result1 = csv_result.iloc[start_line:end_line, 0:4]
+    row_list = csv_result1.values.tolist()
 
-    print(hot_set)
-    return hot_set
+    for i in range(1, 8):
+        item_list = []
+        for m in range(end_line - start_line):
+            try:
+                item = int(row_list[m][1])
+                type = int(row_list[m][3])
+                if type == i:
+                    item_list.append(item)
+            except:
+                print("error")
+        collection_items = Counter(item_list)
+        # 还可以输出频率最大的n个元素,类型为list
+        most_counterNum = collection_items.most_common(50)
+        for j in range(50):
+            hot_list[i - 1][j] = str(most_counterNum[j][0]) + '/' + str(i)
+    print(hot_list)
+    return hot_list
 
 
 if __name__ == '__main__':
-    hot_set = hot_rec()
-    print(hot_set)
+    hot_list = hot_rec()
+    print(hot_list)

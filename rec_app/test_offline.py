@@ -51,6 +51,9 @@ if __name__ == '__main__':
     global bpr
     bpr = BPR(hash_user, user_hash, hash_item, item_hash, user_ratings, U, V, biasV, uid_clicked)
     bpr.main()
+    user = 4128772
+    item = '55770/2'
+    bpr.online_train(user, item)
 
     # user = 4128772
     # item = 73633

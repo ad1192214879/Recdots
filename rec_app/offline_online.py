@@ -166,6 +166,7 @@ class BPR():
         self.V = V
         self.biasV = biasV
         self.uid_clicked = uid_clicked
+        self.hot_list = hot_rec()
         # # hash映射
         # hash_user = dict()  # hash映射 0開始的id：本身id
         # user_hash = dict()  # hash映射 本身id：0開始的id
@@ -222,10 +223,7 @@ class BPR():
             print("length of user :"+str(len(user_set)))
         end_load_user = time.time()
         duration = str(round((end_load_user - start_load_user), 2))
-        logs.info('Finish loading user. Total time : ' + str(duration) + ' s.\n' +
-                                                                             '---------------------------------------------------------------------------------------------------------------\n'+
-                                                                             '---------------------------------------------------------------------------------------------------------------\n'+
-                                                                             '---------------------------------------------------------------------------------------------------------------')
+        logs.info('Finish loading user. Total time : ' + str(duration) + ' s.\n' )
 
 
 
@@ -235,17 +233,17 @@ class BPR():
         item_set = set()
 
         for count in range(40):
-            select_sql = 'SELECT * FROM item ORDER BY create_time DESC LIMIT 1000 OFFSET %d' % (count * 1000)
+            select_sql = 'SELECT * FROM item_type ORDER BY create_time DESC LIMIT 1000 OFFSET %d' % (count * 1000)
             select_result = select_db(select_sql)
             for j in range(1000):
                 try:
-                    u = int(select_result[j]['item_id'])
-                    item_set.add(u)
-                    print(u)
+                    item = str(select_result[j]['item_id'])
+                    item_set.add(item)
+                    # print(item)
                 except:
                     print("第" + str(count * 1000 + j) + "条数据读取报错")
                     #break
-            print("length of item : " + str(len(item_set)))
+            # print("length of item : " + str(len(item_set)))
 
         print("length of item : " + str(len(item_set)))
         # with open('item.csv', encoding='utf-8') as fp:
@@ -259,23 +257,20 @@ class BPR():
         #     print("length of item :"+str(len(item_set)))
         end_load_item = time.time()
         duration = str(round((end_load_item - start_load_item), 2))
-        logs.info('Finish loading item. Total time : ' + str(duration) + ' s.\n' +
-                  '---------------------------------------------------------------------------------------------------------------\n' +
-                  '---------------------------------------------------------------------------------------------------------------\n' +
-                  '---------------------------------------------------------------------------------------------------------------')
+        logs.info('Finish loading item. Total time : ' + str(duration) + ' s.\n' )
 
-        # 读交互表
-        with open('user_item.csv', encoding='utf-8') as fp:
-            reader = csv.reader(fp)
-
-            # for line in reader:
-            for line in islice(reader, 1, None):
-                u = int(line[0])
-                i = int(line[1])
-                user_set.add(u)
-                item_set.add(i)
-            print("length of user :"+str(len(user_set)))
-            print("length of item :"+str(len(item_set)))
+        # # 读交互表
+        # with open('user_item.csv', encoding='utf-8') as fp:
+        #     reader = csv.reader(fp)
+        #
+        #     # for line in reader:
+        #     for line in islice(reader, 1, None):
+        #         u = int(line[0])
+        #         i = int(line[1])
+        #         user_set.add(u)
+        #         item_set.add(i)
+        #     print("length of user :"+str(len(user_set)))
+        #     print("length of item :"+str(len(item_set)))
 
         # 建立hash映射
         index1 = 0
@@ -297,32 +292,61 @@ class BPR():
         filename = 'D:\\Recdots\\Recdots-master\\rec\\rec_app\\user_item.csv'
         total_lines = sum(1 for line in open(filename, encoding='utf-8'))
         print('The total lines is ', total_lines)
-        # 读取
+
+        # 读取交互表
         csv_result = pd.read_csv('D:\\Recdots\\Recdots-master\\rec\\rec_app\\user_item.csv')
+
         if total_lines >= 1000000:
             start_line = total_lines - 1000000
-            end_line = start_line + 1000
+            end_line = total_lines
         else:
             start_line = 0
-            end_line = start_line + 1000
+            end_line = total_lines
 
-        for i in range(1000):
+        csv_result1 = csv_result.iloc[start_line:end_line, 0:4]
+        row_list = csv_result1.values.tolist()
+        # print(f"行读取结果：{row_list}")
+        for j in range(end_line - start_line):
+            try:
+                user = row_list[j][0]
+                item = row_list[j][1]
+                type = row_list[j][3]
+                item_type = str(item) + '/' + str(type)
+                # if item_type in self.item_hash.keys():
+                #     print("行数据有")
+                # print(self.item_hash)
+                u = self.user_hash[user]
+                i = self.item_hash[item_type]
+                self.user_ratings[u].add(i)
+                # print(str(j) + "行数据 successful")
+            except:
+                # print(str(j) + "行数据 bug or null")
+                test = 1
 
-            csv_result1 = csv_result.iloc[start_line:end_line, 0:2]
-            row_list = csv_result1.values.tolist()
-            print(f"行读取结果：{row_list}")
-            for j in range(1000):
-                try:
-                    user_set.add(row_list[j][0])
-                    item_set.add(row_list[j][1])
-                    u = self.user_hash[row_list[j][0]]
-                    i = self.item_hash[row_list[j][1]]
-                    self.user_ratings[u].add(i)
-                except:
-                    print(str(j + i * 1000) + "行数据 bug or null")
-
-            start_line += 1000
-            end_line = start_line + 1000
+        # if total_lines >= 1000000:
+        #     start_line = total_lines - 1000000
+        #     end_line = start_line + 1000
+        # else:
+        #     start_line = 0
+        #     end_line = start_line + 1000
+        #
+        # for i in range(1000):
+        #
+        #     csv_result1 = csv_result.iloc[start_line:end_line, 0:2]
+        #     row_list = csv_result1.values.tolist()
+        #     print(f"行读取结果：{row_list}")
+        #     for j in range(1000):
+        #         try:
+        #             user_set.add(row_list[j][0])
+        #             item_set.add(row_list[j][1])
+        #             u = self.user_hash[row_list[j][0]]
+        #             i = self.item_hash[row_list[j][1]]
+        #             self.user_ratings[u].add(i)
+        #         except:
+        #             print(str(j + i * 1000) + "行数据 bug or null")
+        #
+        #     start_line += 1000
+        #     end_line = start_line + 1000
 
         # with open('user_item.csv', encoding='utf-8') as fp:
         #     reader2 = csv.reader(fp)
@@ -339,11 +363,13 @@ class BPR():
 
         end_load_user_item = time.time()
         duration = str(round((end_load_user_item - start_load_user_item), 2))
-        logs.info('Finish loading user_item. Total time : ' + str(duration) + ' s.\n' +
-                  '---------------------------------------------------------------------------------------------------------------\n' +
-                  '---------------------------------------------------------------------------------------------------------------\n' +
-                  '---------------------------------------------------------------------------------------------------------------')
+        logs.info('Finish loading user_item. Total time : ' + str(duration) + ' s.\n' )
 
+        duration = str(round((end_load_user_item - start_load_user), 2))
+        logs.info('Finish loading data. Total time : ' + str(duration) + ' s.\n' +
+                                                                             '---------------------------------------------------------------------------------------------------------------\n'+
+                                                                             '---------------------------------------------------------------------------------------------------------------\n'+
+                                                                             '---------------------------------------------------------------------------------------------------------------')
 
         # return self.user_ratings
         # import pdb;pdb.set_trace()
@@ -431,12 +457,13 @@ class BPR():
 
             logger = logging.getLogger()
             logs = log.CommonLog(logger, "rec_app/rec_log/online_tarin.log")
+            logs.info('user : '+ str(user)+' clicked item : '+item+'\n')
             logs.info('Start online training!\n')
 
             u = self.user_hash[user]
             i = self.item_hash[item]
             self.user_ratings[u].add(i)
-            self.uid_clicked[user].add(item)
+            self.uid_clicked[int(user)].add(str(item))
             # 随机选取一个用户u没有评分的项目
             j = random.randint(0, self.item_count - 1)
             while j in self.user_ratings[u]:
@@ -474,61 +501,31 @@ class BPR():
             # 开始查询
             start_select = time.time()
 
-
-
             end_select = time.time()
             select_duration = str(round((end_select - start_select) * 1000, 2))
             logs.info('Query the user whose user ID is ' + str(user) + ' from the database. Using time ' + str(
                 select_duration) + ' ms.')
 
-            # 获得包含所有user的点击set
-            clicked_set = set()
-            select_sql = 'SELECT * FROM rec_his WHERE clicked_ids IS NOT NULL'
-            select_result = select_db(select_sql)
-            for i in range(len(select_result)):
-                uid = select_result[i]['user_id']
-                itemid = select_result[i]['clicked_ids']
-                self.uid_clicked[int(uid)].add(int(itemid))
-            for uid in self.uid_clicked.keys():
-                for i in self.uid_clicked[uid]:
-                    clicked_set.add(i)
-            print(clicked_set)
 
-            # 热门过滤
-            item_set = set()
-            hot_set = hot_rec()
-            print(hot_set)
-            index = 0
-            for i in hot_set:
-                if i not in clicked_set:
-                    item_set.add(i)
-                    index += 1
-
-                if index >= 21:
-                    break
-                print(i)
-            print(item_set)  # item_set保留21个热门
-
-
-            select_sql = 'SELECT * FROM rec WHERE user_id="%d"'% user  # %s（）或者用format
+            select_sql = 'SELECT * FROM rec WHERE user_id="%d"'% int(user)  # %s（）或者用format
             select_result = select_db(select_sql)
             index2 = select_result[0]['index2']
-            select_lastsql = 'SELECT * FROM rec_his ORDER BY create_time DESC limit 1'
-            select_last = select_db(select_lastsql)
-            id2 = select_last[0]['id'] + 1
+            # select_lastsql = 'SELECT * FROM rec_his ORDER BY create_time DESC limit 1'
+            # select_last = select_db(select_lastsql)
+            # id2 = select_last[0]['id'] + 1
+
+            # hot_list = hot_rec()
+
+            item_set = set()
+
+            user_id = int(user)
+            # 热门过滤
+            item_set = self.hot_filter(self.hot_list, u)
+
 
             # bpr过滤
-            count = 0
-            for item_index in range(len(topK_matrix1[0])):
-                m = topK_matrix1[0][item_index]
-                # topK_matrix1[x1][y1] = self.hash_item[topK_matrix1[x1][y1]]
-                item_id = int(self.hash_item[m])
-                if (item_id not in item_set) and (item_id not in self.uid_clicked[user]):
-                    item_set.add(item_id)
-                    count += 1
+            item_set = self.bpr_filter(topK_matrix1, item_set, user_id)
 
-                if count >= 29:
-                    break
 
             # item_ids字符串构建
             item_ids = ''
@@ -541,13 +538,14 @@ class BPR():
             start_update = time.time()
             update_sql = 'update rec set item_ids = "%s" where index2 = "%d"' % (item_ids, index2)
             update_db(update_sql)
+            logs.info('online update rec successful!')
 
+            now = datetime.datetime.now()
             # update rec_his
-            insert_sql2 = "INSERT INTO rec_his(id, user_id, item_ids, clicked_ids) VALUES(%d, %d, '%s', %d)" % (
-            id2, user_id, item_ids, int(item))
-            print(insert_sql2)
-            print(item)
+            insert_sql2 = "INSERT INTO rec_his1(user_id, item_ids, clicked_ids, create_time) VALUES( %d, '%s', '%s', '%s')" % (
+            user_id, item_ids, str(item), now)
             insert_db(insert_sql2)
+            logs.info('online update rec_his successful!')
 
             end_update = time.time()
             update_duration = str(round((end_update - start_update) * 1000, 2))
@@ -562,7 +560,10 @@ class BPR():
                 # data2 = [[u1, u2, u3], ['小力', '12', '男'], ]
                 # for i in data2:
                 #     wf.writerow(i)
-                data2 = [user, item, now]
+                item_type = item.split('/')
+                item = item_type[0]
+                type = item_type[1]
+                data2 = [user, item, now, type]
                 wf.writerow(data2)
 
 
@@ -596,7 +597,38 @@ class BPR():
 
         return predict
 
+    def hot_filter(self, hot_list, user_index):
+        item_set = set()
 
+        user_id = int(self.hash_user[user_index])
+        for index in range(7):
+            count = 0
+            for item_id in hot_list[index]:
+                if (item_id not in self.uid_clicked[user_id]):
+                    item_set.add(item_id)
+                    count += 1
+                if count >= 3:
+                    break
+
+        return item_set
+
+    def bpr_filter(self, topK_matrix1, item_set, user_id):
+        # bpr过滤
+        count = 0
+        for item_index in range(len(topK_matrix1[0])):
+
+            m = topK_matrix1[0][item_index]
+            # topK_matrix1[x1][y1] = self.hash_item[topK_matrix1[x1][y1]]
+            item_id = str(self.hash_item[m])
+            if (item_id not in item_set) and (item_id not in self.uid_clicked[user_id]):
+                item_set.add(item_id)
+                count += 1
+
+            if count >= 29:
+                break
+            item_set.add(item_id)
+
+        return item_set
 
     #??????
     def main(self):
@@ -612,15 +644,15 @@ class BPR():
         self.load_data(self.train_data_path)
 
         # print(user_ratings_train)
-        # 获取测试集的评分矩阵
-        self.load_test_data(self.test_data_path)
-        # 将test_data矩阵拍平
-        for u in range(self.user_count):
-            for item in range(self.item_count):
-                if int(self.test_data[u][item]) == 1:
-                    self.test[u * self.item_count + item] = 1
-                else:
-                    self.test[u * self.item_count + item] = 0
+        # # 获取测试集的评分矩阵
+        # self.load_test_data(self.test_data_path)
+        # # 将test_data矩阵拍平
+        # for u in range(self.user_count):
+        #     for item in range(self.item_count):
+        #         if int(self.test_data[u][item]) == 1:
+        #             self.test[u * self.item_count + item] = 1
+        #         else:
+        #             self.test[u * self.item_count + item] = 0
 
 
 
@@ -663,41 +695,19 @@ class BPR():
         # predict_matrix = self.predict(self.U, self.V) #??????????????
         # print(predict_matrix)
 
-        # 获得包含所有user的点击set
-        clicked_set = set()
-        select_sql = 'SELECT * FROM rec_his WHERE clicked_ids IS NOT NULL'
-        select_result = select_db(select_sql)
-        for i in range(len(select_result)):
-            uid = select_result[i]['user_id']
-            itemid = select_result[i]['clicked_ids']
-            self.uid_clicked[int(uid)].add(int(itemid))
-        for uid in self.uid_clicked.keys():
-            for i in self.uid_clicked[uid]:
-                clicked_set.add(i)
-        print(clicked_set)
-
-        # 热门过滤
-        item_set = set()
-        hot_set = hot_rec()
-        print(hot_set)
-        index = 0
-        for i in hot_set:
-            if i not in clicked_set:
-                item_set.add(i)
-                index += 1
-
-            if index >= 21:
-                break
-            print(i)
-        print(item_set)  # item_set保留21个热门
-
+        # # 产生每种类型的hot50
+        # hot_list = hot_rec()
 
         id = 0
-        select_lastsql = 'SELECT * FROM rec_his ORDER BY create_time DESC limit 1'
-        select_last = select_db(select_lastsql)
-        id2 = select_last[0]['id'] + 1
+        # select_lastsql = 'SELECT * FROM rec_his ORDER BY create_time DESC limit 1'
+        # select_last = select_db(select_lastsql)
+        # id2 = select_last[0]['id'] + 1
 
         for user_index in range(459):
+
+            # 热门过滤
+            item_set = self.hot_filter(self.hot_list, user_index)
+
 
             predict = np.mat(self.U[user_index]) * np.mat(self.V.T)
             print(predict)
@@ -708,27 +718,8 @@ class BPR():
             print(topK_matrix1[0])
             user_id = int(self.hash_user[user_index])
 
-
             # bpr过滤
-            count = 0
-            for item_index in range(len(topK_matrix1[0])):
-                index2 = id
-                m = topK_matrix1[0][item_index]
-                # topK_matrix1[x1][y1] = self.hash_item[topK_matrix1[x1][y1]]
-                item_id = int(self.hash_item[m])
-                if (item_id not in item_set) and (item_id not in self.uid_clicked[user_id]):
-                    item_set.add(item_id)
-                    count += 1
-
-                if count >= 29:
-                    break
-
-                # # insert_sql1 = "INSERT INTO rec(index2, user_id, item_ids, create_time) VALUES(%d, %d, %d, str_to_date(%s,'%%Y-%%m-%%d %%H:%%M:%%S'))" % (id, user_id, item_ids, now_time)
-
-                # insert_sql2 = "INSERT INTO rec_his(id, user_id, item_ids) VALUES(%d, %d, %d)" % (id, user_id, item_ids)
-                # # insert_sql2 = "INSERT INTO rec_his(id, user_id, item_ids, create_time) VALUES(%d, %d, %d, str_to_date(%s,'%%Y-%%m-%%d %%H:%%M:%%S'))" % (id, user_id, item_ids, now_time)
-                # insert_db(insert_sql2)
-
+            item_set = self.bpr_filter(topK_matrix1, item_set, user_id)
 
             # item_ids字符串构建
             item_ids = ''
@@ -751,46 +742,11 @@ class BPR():
                 update_sql = 'update rec set user_id = "%d", item_ids = "%s" where index2 = "%d"' % (user_id, item_ids, id)
                 update_db(update_sql)
 
-            insert_sql2 = "INSERT INTO rec_his(id, user_id, item_ids) VALUES(%d, %d, '%s')" % (id2, user_id, item_ids)
-            insert_db(insert_sql2)
+            # insert_sql2 = "INSERT INTO rec_his(id, user_id, item_ids) VALUES(%d, %d, '%s')" % (id2, user_id, item_ids)
+            # insert_db(insert_sql2)
 
             id += 1
-            id2 += 1
-
-
-        # for x1 in range(len(topK_matrix1)):
-        #     user_id = int(self.hash_user[x1])
-        #     select_sql = 'SELECT * FROM rec WHERE user_id="%d"' % user_id  # %s（）或者用format
-        #     select_result = select_db(select_sql)
-        #     item_ids = ''
-        #     for y1 in range(len(topK_matrix1[x1])):
-        #         index2 =id
-        #         m = topK_matrix1[x1][y1]
-        #         # topK_matrix1[x1][y1] = self.hash_item[topK_matrix1[x1][y1]]
-        #         item_id = int(self.hash_item[m])
-        #         item_ids = item_ids + str(item_id) + ','
-        #         # # insert_sql1 = "INSERT INTO rec(index2, user_id, item_ids, create_time) VALUES(%d, %d, %d, str_to_date(%s,'%%Y-%%m-%%d %%H:%%M:%%S'))" % (id, user_id, item_ids, now_time)
-        #
-        #         # insert_sql2 = "INSERT INTO rec_his(id, user_id, item_ids) VALUES(%d, %d, %d)" % (id, user_id, item_ids)
-        #         # # insert_sql2 = "INSERT INTO rec_his(id, user_id, item_ids, create_time) VALUES(%d, %d, %d, str_to_date(%s,'%%Y-%%m-%%d %%H:%%M:%%S'))" % (id, user_id, item_ids, now_time)
-        #         # insert_db(insert_sql2)
-        #
-        #     item_ids = item_ids[:-1]
-        #     print(user_id, item_ids)
-        #     if (select_result == ()):
-        #         # insert
-        #         insert_sql1 = "INSERT INTO rec(index2, user_id, item_ids) VALUES(%d, %d, '%s')" % (id, user_id, item_ids)
-        #         insert_db(insert_sql1)
-        #     else:
-        #         # update
-        #         update_sql = 'update rec set item_ids = "%s" where index2 = "%d"' % (item_ids, id)
-        #         update_db(update_sql)
-        #
-        #     insert_sql2 = "INSERT INTO rec_his(id, user_id, item_ids) VALUES(%d, %d, '%s')" % (id2, user_id, item_ids)
-        #     insert_db(insert_sql2)
-        #
-        #     id += 1
-        #     id2 += 1
+            # id2 += 1
 
 
         end_offline_insert = time.time()
@@ -800,54 +756,13 @@ class BPR():
                                                                              '---------------------------------------------------------------------------------------------------------------\n'+
                                                                              '---------------------------------------------------------------------------------------------------------------')
 
-        # topK_matrix1 = naive_arg_topK(predict_matrix, 10, axis=1)
-        # print(topK_matrix1)
-
-        # # 在线训练
-        # #self.online_train(self, user, item)
-        # # old_time1 = '2022-10-11 19:16:32'
-        # # old_time = datetime.datetime.strptime(old_time1, "%Y-%m-%d %H:%M:%S")
-        # select_sql = 'SELECT * FROM behavior ORDER BY create_time DESC limit 1'  # %s（）或者用format
-        # data = select_db(select_sql)
-        # old_time = data[0]['create_time']
-        # while 1:
-        #     select_sql = 'SELECT * FROM behavior ORDER BY create_time DESC limit 1'  # %s（）或者用format
-        #     m = select_db(select_sql)
-        #
-        #     uid = m[0]['user_id']
-        #     iid = m[0]['item_id']
-        #     u = self.user_hash[uid]
-        #     i = self.item_hash[iid]
-        #     # print(m)
-        #     # print(m[0]['user_id'])
-        #     # print(m[0]['item_id'])
-        #     # print(m[0]['create_time'])
-        #
-        #     if m[0]['create_time'] > old_time:
-        #         self.online_train(uid, iid)
-        #         predict_matrix = self.predict(self.U, self.V)
-        #         print(predict_matrix)
-        #         topK_matrix = partition_arg_topK(predict_matrix, 10, axis=1)
-        #         topK_matrix1 = np.array(topK_matrix)
-        #
-        #         select_sql = 'SELECT * FROM rec WHERE user_id="%d"'% uid  # %s（）或者用format
-        #         m1 = select_db(select_sql)
-        #         index2 = m1[0]['index2']
-        #         for y in range(len(topK_matrix1[u])):
-        #             ii = topK_matrix1[u][y]
-        #             # topK_matrix1[x1][y1] = self.hash_item[topK_matrix1[x1][y1]]
-        #             user_id = int(self.hash_user[u])
-        #             item_ids = int(self.hash_item[ii])
-        #             # update一下rec
-        #             # update_sql = 'update rec set item_ids = "%d" where index2 = "%d"' % (item_ids, index2)
-        #             # update_db(update_sql)
-        #             index2 += 1
-        #
-        #         old_time = m[0]['create_time']
-
-
-            # print(old_time > m[0]['create_time'])
-
+        # 删除rec_his超过5天的数据
+        delete_sql = 'DELETE FROM rec_his1 WHERE DATE(create_time) < (curdate() - INTERVAL 5 DAY) LIMIT 1000'
+        try:
+            delete_db(delete_sql)
+            print("delete successful")
+        except:
+            print("delete false")
 
 
 
@@ -862,7 +777,7 @@ class BPR():
 
         end_offline = time.time()
         duration = str(round((end_offline - start_offline_train), 2))
-        logs.info('Finish offline inserting rec and rec_his. Total time : ' + str(duration) + ' s.\n' +
+        logs.info('Finish offline. Total time : ' + str(duration) + ' s.\n' +
                                                                              '---------------------------------------------------------------------------------------------------------------\n'+
                                                                              '---------------------------------------------------------------------------------------------------------------\n'+
                                                                              '---------------------------------------------------------------------------------------------------------------')
@@ -981,34 +896,69 @@ def update_db(update_sql):
         finally:
             cursor.close()
 
+
+def delete_db(delete_sql):
+    ''' 更新数据库操作 '''
+
+    db = pymysql.connect(
+        host="localhost",
+        port=3306,
+        user="root",
+        passwd="123456",
+        db="recdots"
+    )
+
+    cursor = db.cursor()
+
+    try:
+        # 执行sql
+        cursor.execute(delete_sql)
+        # tt = self.cursor.execute(sql) # 返回 更新数据 条数 可以根据 返回值 判定处理结果
+        # print(tt)
+        db.commit()
+    except:
+        # 发生错误时回滚
+        db.rollback()
+    finally:
+        cursor.close()
 def hot_rec():
 
-    item_list = []
-    with open('user_item.csv', encoding='utf-8') as fp:
-        reader = csv.reader(fp)
+    import pandas as pd
+    filename = 'D:\\Recdots\\Recdots-master\\rec\\rec_app\\user_item.csv'
+    total_lines = sum(1 for line in open(filename, encoding='utf-8'))
+    print('The total lines is ', total_lines)
 
-        # for line in reader:
-        for line in islice(reader, 1, None):
-            i = int(line[1])
-            item_list.append(i)
-        print("length of item :" + str(len(item_list)))
+    hot_list = [[0] * 50 for _ in range(7)]
 
+    csv_result = pd.read_csv('D:\\Recdots\\Recdots-master\\rec\\rec_app\\user_item.csv')
 
-    collection_items = Counter(item_list)
-    # print(collection_items)
-    # 还可以输出频率最大的n个元素,类型为list
-    most_counterNum = collection_items.most_common(50)
-    print(most_counterNum)
-    print(most_counterNum[0])  #元组(id，count)
-    print(most_counterNum[0][0])  #id
-    print(type(most_counterNum))
+    if total_lines >= 1000000:
+        start_line = total_lines - 1000000
+        end_line = total_lines
+    else:
+        start_line = 0
+        end_line = total_lines
 
-    hot_set = set()
-    for i in range(50):
-        hot_set.add(most_counterNum[i][0])
+    csv_result1 = csv_result.iloc[start_line:end_line, 0:4]
+    row_list = csv_result1.values.tolist()
 
-    print(hot_set)
-    return hot_set
+    for i in range(1, 8):
+        item_list = []
+        for m in range(end_line - start_line):
+            try:
+                item = int(row_list[m][1])
+                type = int(row_list[m][3])
+                if type == i:
+                    item_list.append(item)
+            except:
+                print("error")
+        collection_items = Counter(item_list)
+        # 还可以输出频率最大的n个元素,类型为list
+        most_counterNum = collection_items.most_common(50)
+        for j in range(50):
+            hot_list[i - 1][j] = str(most_counterNum[j][0]) + '/' + str(i)
+    print(hot_list)
+    return hot_list
 
 if __name__ == '__main__':
     # 调用类的主函数

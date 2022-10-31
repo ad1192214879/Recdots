@@ -77,7 +77,7 @@ def insert_db(insert_sql):
 # 用户数
 user_count = 4000000
 # 物品数
-item_count = 33980
+item_count = 40000
 # k个主题，k数
 latent_factors = 20
 
@@ -95,12 +95,12 @@ V = np.random.rand(item_count, latent_factors) * 0.01
 biasV = np.random.rand(item_count) * 0.01
 
 
-select_sql = 'SELECT * FROM rec_his WHERE clicked_ids IS NOT NULL'
+select_sql = 'SELECT * FROM rec_his1 WHERE clicked_ids IS NOT NULL'
 select_result = select_db(select_sql)
 for i in range(len(select_result)):
     uid = select_result[i]['user_id']
     itemid = select_result[i]['clicked_ids']
-    uid_clicked[int(uid)].add(int(itemid))
+    uid_clicked[int(uid)].add(str(itemid))
 
 print(uid_clicked)
 
@@ -228,7 +228,7 @@ def result(request):
         uid = request.POST.get('uid')
         print("ID:", itemid, "uid:", uid)
 
-        if int(itemid) not in bpr.hash_item.values():
+        if str(itemid) not in bpr.hash_item.values():
             return HttpResponse("商品不存在")
         if int(uid) not in bpr.hash_user.values():
             select_sql = 'SELECT * FROM user WHERE user_id="%d"' % int(uid)
@@ -240,9 +240,10 @@ def result(request):
                 print(123)
                 return HttpResponse("新用户")
 
-        uid_clicked[int(uid)].add(int(itemid))
+        uid_clicked[int(uid)].add(str(itemid))
+        print(uid_clicked)
         A = time.time()
-        bpr.online_train(int(uid), int(itemid))
+        bpr.online_train(int(uid), str(itemid))
         B = time.time()
         print((B - A) * 1000)
         # logs.info('id为'+uid+'的用户点击了'+'信息'+itemid)
@@ -274,7 +275,7 @@ def result(request):
                     # data1 = list(Item.objects.filter(item_id=n_id).all())
                     # n_name = data1[0].item_name
                     n_id = items_list[i]
-                    select_sql = 'SELECT * FROM item WHERE item_id="%d"' % int(n_id)  # %s（）或者用format
+                    select_sql = 'SELECT * FROM item_type WHERE item_id="%s"' % str(n_id)  # %s（）或者用format
                     select_result1 = select_db(select_sql)
                     print(select_result1)
                     one['item_id'] = str(n_id)
